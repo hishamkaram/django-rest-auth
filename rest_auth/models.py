@@ -6,5 +6,4 @@ from .utils import import_callable
 
 # Register your models here.
 
-TokenModel = import_callable(
-    getattr(settings, 'REST_AUTH_TOKEN_MODEL', DefaultTokenModel))
+TokenModel = import_callable(getattr(settings, 'REST_AUTH_TOKEN_MODEL', DefaultTokenModel))

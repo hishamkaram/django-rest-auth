@@ -1,27 +1,28 @@
-from django.http import HttpRequest
-from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth import get_user_model
+from django.http import HttpRequest
+
+from .. import _
 
 try:
     from allauth.account import app_settings as allauth_settings
-    from allauth.utils import (email_address_exists,
-                               get_username_max_length)
     from allauth.account.adapter import get_adapter
     from allauth.account.utils import setup_user_email
     from allauth.socialaccount.helpers import complete_social_login
     from allauth.socialaccount.models import SocialAccount
     from allauth.socialaccount.providers.base import AuthProcess
+    from allauth.utils import email_address_exists, get_username_max_length
 except ImportError:
-    raise ImportError("allauth needs to be added to INSTALLED_APPS.")
+    raise ImportError('allauth needs to be added to INSTALLED_APPS.')
 
-from rest_framework import serializers
 from requests.exceptions import HTTPError
+from rest_framework import serializers
 
 
 class SocialAccountSerializer(serializers.ModelSerializer):
     """
     serialize allauth SocialAccounts for use with a REST API
     """
+
     class Meta:
         model = SocialAccount
         fields = (
@@ -63,13 +64,11 @@ class SocialLoginSerializer(serializers.Serializer):
         request = self._get_request()
 
         if not view:
-            raise serializers.ValidationError(
-                _("View is not defined, pass it as a context variable")
-            )
+            raise serializers.ValidationError(_('View is not defined, pass it as a context variable'))
 
         adapter_class = getattr(view, 'adapter_class', None)
         if not adapter_class:
-            raise serializers.ValidationError(_("Define adapter_class in view"))
+            raise serializers.ValidationError(_('Define adapter_class in view'))
 
         adapter = adapter_class(request)
         app = adapter.get_provider().get_app(request)
@@ -87,13 +86,9 @@ class SocialLoginSerializer(serializers.Serializer):
             self.client_class = getattr(view, 'client_class', None)
 
             if not self.callback_url:
-                raise serializers.ValidationError(
-                    _("Define callback_url in view")
-                )
+                raise serializers.ValidationError(_('Define callback_url in view'))
             if not self.client_class:
-                raise serializers.ValidationError(
-                    _("Define client_class in view")
-                )
+                raise serializers.ValidationError(_('Define client_class in view'))
 
             code = attrs.get('code')
 
@@ -106,14 +101,13 @@ class SocialLoginSerializer(serializers.Serializer):
                 adapter.access_token_method,
                 adapter.access_token_url,
                 self.callback_url,
-                scope
+                scope,
             )
             token = client.get_access_token(code)
             access_token = token['access_token']
 
         else:
-            raise serializers.ValidationError(
-                _("Incorrect input. access_token or code is required."))
+            raise serializers.ValidationError(_('Incorrect input. access_token or code is required.'))
 
         social_token = adapter.parse_token({'access_token': access_token})
         social_token.app = app
@@ -122,7 +116,7 @@ class SocialLoginSerializer(serializers.Serializer):
             login = self.get_social_login(adapter, app, social_token, access_token)
             complete_social_login(request, login)
         except HTTPError:
-            raise serializers.ValidationError(_("Incorrect value"))
+            raise serializers.ValidationError(_('Incorrect value'))
 
         if not login.is_existing:
             # We have an account already signed up in a different flow
@@ -131,13 +125,15 @@ class SocialLoginSerializer(serializers.Serializer):
             # link up the accounts due to security constraints
             if allauth_settings.UNIQUE_EMAIL:
                 # Do we have an account already with this email address?
-                account_exists = get_user_model().objects.filter(
-                    email=login.user.email,
-                ).exists()
-                if account_exists:
-                    raise serializers.ValidationError(
-                        _("User is already registered with this e-mail address.")
+                account_exists = (
+                    get_user_model()
+                    .objects.filter(
+                        email=login.user.email,
                     )
+                    .exists()
+                )
+                if account_exists:
+                    raise serializers.ValidationError(_('User is already registered with this e-mail address.'))
 
             login.lookup()
             login.save(request, connect=True)
@@ -167,7 +163,7 @@ class RegisterSerializer(serializers.Serializer):
     username = serializers.CharField(
         max_length=get_username_max_length(),
         min_length=allauth_settings.USERNAME_MIN_LENGTH,
-        required=allauth_settings.USERNAME_REQUIRED
+        required=allauth_settings.USERNAME_REQUIRED,
     )
     email = serializers.EmailField(required=allauth_settings.EMAIL_REQUIRED)
     password1 = serializers.CharField(write_only=True)
@@ -181,8 +177,7 @@ class RegisterSerializer(serializers.Serializer):
         email = get_adapter().clean_email(email)
         if allauth_settings.UNIQUE_EMAIL:
             if email and email_address_exists(email):
-                raise serializers.ValidationError(
-                    _("A user is already registered with this e-mail address."))
+                raise serializers.ValidationError(_('A user is already registered with this e-mail address.'))
         return email
 
     def validate_password1(self, password):
@@ -200,7 +195,7 @@ class RegisterSerializer(serializers.Serializer):
         return {
             'username': self.validated_data.get('username', ''),
             'password1': self.validated_data.get('password1', ''),
-            'email': self.validated_data.get('email', '')
+            'email': self.validated_data.get('email', ''),
         }
 
     def save(self, request):

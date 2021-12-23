@@ -1,39 +1,34 @@
-from django.conf import settings
-from django.utils.decorators import method_decorator
-from django.utils.translation import ugettext_lazy as _
-from django.views.decorators.debug import sensitive_post_parameters
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import (AllowAny,
-                                        IsAuthenticated)
-from rest_framework.generics import CreateAPIView, ListAPIView, GenericAPIView
-from rest_framework.exceptions import NotFound
-from rest_framework import status
-
-from allauth.account.adapter import get_adapter
-from allauth.account.views import ConfirmEmailView
-from allauth.account.utils import complete_signup
 from allauth.account import app_settings as allauth_settings
+from allauth.account.adapter import get_adapter
+from allauth.account.utils import complete_signup
+from allauth.account.views import ConfirmEmailView
 from allauth.socialaccount import signals
 from allauth.socialaccount.adapter import get_adapter as get_social_adapter
 from allauth.socialaccount.models import SocialAccount
-
-from rest_auth.app_settings import (TokenSerializer,
-                                    JWTSerializer,
-                                    create_token)
+from django.conf import settings
+from django.utils.decorators import method_decorator
+from django.views.decorators.debug import sensitive_post_parameters
+from rest_auth.app_settings import JWTSerializer, TokenSerializer, create_token
 from rest_auth.models import TokenModel
-from rest_auth.registration.serializers import (VerifyEmailSerializer,
-                                                SocialLoginSerializer,
-                                                SocialAccountSerializer,
-                                                SocialConnectSerializer)
+from rest_auth.registration.serializers import (
+    SocialAccountSerializer,
+    SocialConnectSerializer,
+    SocialLoginSerializer,
+    VerifyEmailSerializer,
+)
 from rest_auth.utils import jwt_encode
 from rest_auth.views import LoginView
+from rest_framework import status
+from rest_framework.exceptions import NotFound
+from rest_framework.generics import CreateAPIView, GenericAPIView, ListAPIView
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .. import _
 from .app_settings import RegisterSerializer, register_permission_classes
 
-sensitive_post_parameters_m = method_decorator(
-    sensitive_post_parameters('password1', 'password2')
-)
+sensitive_post_parameters_m = method_decorator(sensitive_post_parameters('password1', 'password2'))
 
 
 class RegisterView(CreateAPIView):
@@ -46,15 +41,11 @@ class RegisterView(CreateAPIView):
         return super(RegisterView, self).dispatch(*args, **kwargs)
 
     def get_response_data(self, user):
-        if allauth_settings.EMAIL_VERIFICATION == \
-                allauth_settings.EmailVerificationMethod.MANDATORY:
-            return {"detail": _("Verification e-mail sent.")}
+        if allauth_settings.EMAIL_VERIFICATION == allauth_settings.EmailVerificationMethod.MANDATORY:
+            return {'detail': _('Verification e-mail sent.')}
 
         if getattr(settings, 'REST_USE_JWT', False):
-            data = {
-                'user': user,
-                'token': self.token
-            }
+            data = {'user': user, 'token': self.token}
             return JWTSerializer(data).data
         else:
             return TokenSerializer(user.auth_token).data
@@ -65,9 +56,11 @@ class RegisterView(CreateAPIView):
         user = self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
 
-        return Response(self.get_response_data(user),
-                        status=status.HTTP_201_CREATED,
-                        headers=headers)
+        return Response(
+            self.get_response_data(user),
+            status=status.HTTP_201_CREATED,
+            headers=headers,
+        )
 
     def perform_create(self, serializer):
         user = serializer.save(self.request)
@@ -76,9 +69,7 @@ class RegisterView(CreateAPIView):
         else:
             create_token(self.token_model, user, serializer)
 
-        complete_signup(self.request._request, user,
-                        allauth_settings.EMAIL_VERIFICATION,
-                        None)
+        complete_signup(self.request._request, user, allauth_settings.EMAIL_VERIFICATION, None)
         return user
 
 
@@ -121,6 +112,7 @@ class SocialLoginView(LoginView):
         callback_url = 'localhost:8000'
     -------------
     """
+
     serializer_class = SocialLoginSerializer
 
     def process_login(self):
@@ -139,6 +131,7 @@ class SocialConnectView(LoginView):
         adapter_class = FacebookOAuth2Adapter
     -------------
     """
+
     serializer_class = SocialConnectSerializer
     permission_classes = (IsAuthenticated,)
 
@@ -150,6 +143,7 @@ class SocialAccountListView(ListAPIView):
     """
     List SocialAccounts for the currently logged in user
     """
+
     serializer_class = SocialAccountSerializer
     permission_classes = (IsAuthenticated,)
 
@@ -162,6 +156,7 @@ class SocialAccountDisconnectView(GenericAPIView):
     Disconnect SocialAccount from remote service for
     the currently logged in user
     """
+
     serializer_class = SocialConnectSerializer
     permission_classes = (IsAuthenticated,)
 
@@ -177,10 +172,6 @@ class SocialAccountDisconnectView(GenericAPIView):
         get_social_adapter(self.request).validate_disconnect(account, accounts)
 
         account.delete()
-        signals.social_account_removed.send(
-            sender=SocialAccount,
-            request=self.request,
-            socialaccount=account
-        )
+        signals.social_account_removed.send(sender=SocialAccount, request=self.request, socialaccount=account)
 
         return Response(self.get_serializer(account).data)

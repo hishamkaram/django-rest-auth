@@ -2,7 +2,7 @@ import json
 
 from django.conf import settings
 from django.test.client import Client, MULTIPART_CONTENT
-from django.utils.encoding import force_text
+from .. import force_text
 
 from rest_framework import status
 from rest_framework import permissions
@@ -21,7 +21,6 @@ class CustomPermissionClass(permissions.BasePermission):
 
 
 class APIClient(Client):
-
     def patch(self, path, data='', content_type=MULTIPART_CONTENT, follow=False, **extra):
         return self.generic('PATCH', path, data, content_type, **extra)
 
@@ -35,6 +34,7 @@ class TestsMixin(object):
         * easy request calls, f.e.: self.post(url, data), self.get(url)
         * easy status check, f.e.: self.post(url, data, status_code=200)
     """
+
     def send_request(self, request_method, *args, **kwargs):
         request_func = getattr(self.client, request_method)
         status_code = None
@@ -54,8 +54,7 @@ class TestsMixin(object):
                 kwargs['HTTP_AUTHORIZATION'] = 'Token %s' % self.token
 
         self.response = request_func(*args, **kwargs)
-        is_json = bool(
-            [x for x in self.response._headers['content-type'] if 'json' in x])
+        is_json = bool([x for x in self.response._headers['content-type'] if 'json' in x])
 
         self.response.json = {}
         if is_json and self.response.content:
@@ -95,10 +94,7 @@ class TestsMixin(object):
         self.social_account_list_url = reverse('social_account_list')
 
     def _login(self):
-        payload = {
-            "username": self.USERNAME,
-            "password": self.PASS
-        }
+        payload = {'username': self.USERNAME, 'password': self.PASS}
         self.post(self.login_url, data=payload, status_code=status.HTTP_200_OK)
 
     def _logout(self):

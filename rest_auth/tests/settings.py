@@ -6,9 +6,7 @@ PROJECT_ROOT = os.path.abspath(os.path.split(os.path.split(__file__)[0])[0])
 ROOT_URLCONF = 'urls'
 STATIC_URL = '/static/'
 STATIC_ROOT = '%s/staticserve' % PROJECT_ROOT
-STATICFILES_DIRS = (
-    ('global', '%s/static' % PROJECT_ROOT),
-)
+STATICFILES_DIRS = (('global', '%s/static' % PROJECT_ROOT),)
 UPLOADS_DIR_NAME = 'uploads'
 MEDIA_URL = '/%s/' % UPLOADS_DIR_NAME
 MEDIA_ROOT = os.path.join(PROJECT_ROOT, '%s' % UPLOADS_DIR_NAME)
@@ -30,7 +28,7 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware'
+    'django.contrib.messages.middleware.MessageMiddleware',
 ]
 
 # Adding for backwards compatibility for Django 1.8 tests
@@ -43,9 +41,8 @@ TEMPLATE_CONTEXT_PROCESSORS = [
     'django.core.context_processors.request',
     'django.contrib.messages.context_processors.messages',
     'django.core.context_processors.static',
-
-    "allauth.account.context_processors.account",
-    "allauth.socialaccount.context_processors.socialaccount",
+    'allauth.account.context_processors.account',
+    'allauth.socialaccount.context_processors.socialaccount',
 ]
 
 # avoid deprecation warnings during tests
@@ -78,23 +75,19 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'django.contrib.sitemaps',
     'django.contrib.staticfiles',
-
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.facebook',
     'allauth.socialaccount.providers.twitter',
-
     'rest_framework',
     'rest_framework.authtoken',
-
     'rest_auth',
     'rest_auth.registration',
-
-    'rest_framework_jwt'
+    'rest_framework_jwt',
 ]
 
-SECRET_KEY = "38dh*skf8sjfhs287dh&^hd8&3hdg*j2&sd"
+SECRET_KEY = '38dh*skf8sjfhs287dh&^hd8&3hdg*j2&sd'
 ACCOUNT_ACTIVATION_DAYS = 1
 SITE_ID = 1
 

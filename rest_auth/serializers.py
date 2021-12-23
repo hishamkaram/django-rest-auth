@@ -3,8 +3,8 @@ from django.conf import settings
 from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_decode as uid_decoder
-from django.utils.translation import ugettext_lazy as _
-from django.utils.encoding import force_text
+from . import _
+from . import force_text
 
 from rest_framework import serializers, exceptions
 from rest_framework.exceptions import ValidationError
@@ -104,6 +104,7 @@ class LoginSerializer(serializers.Serializer):
         # If required, is the email verified?
         if 'rest_auth.registration' in settings.INSTALLED_APPS:
             from allauth.account import app_settings
+
             if app_settings.EMAIL_VERIFICATION == app_settings.EmailVerificationMethod.MANDATORY:
                 email_address = user.emailaddress_set.get(email=user.email)
                 if not email_address.verified:
@@ -127,16 +128,18 @@ class UserDetailsSerializer(serializers.ModelSerializer):
     """
     User model w/o password
     """
+
     class Meta:
         model = UserModel
         fields = ('pk', 'username', 'email', 'first_name', 'last_name')
-        read_only_fields = ('email', )
+        read_only_fields = ('email',)
 
 
 class JWTSerializer(serializers.Serializer):
     """
     Serializer for JWT authentication.
     """
+
     token = serializers.CharField()
     user = serializers.SerializerMethodField()
 
@@ -157,6 +160,7 @@ class PasswordResetSerializer(serializers.Serializer):
     """
     Serializer for requesting a password reset e-mail.
     """
+
     email = serializers.EmailField()
 
     password_reset_form_class = PasswordResetForm
@@ -190,6 +194,7 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
     """
     Serializer for requesting a password reset e-mail.
     """
+
     new_password1 = serializers.CharField(max_length=128)
     new_password2 = serializers.CharField(max_length=128)
     uid = serializers.CharField()
@@ -212,9 +217,7 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
         self.custom_validation(attrs)
         # Construct SetPasswordForm instance
-        self.set_password_form = self.set_password_form_class(
-            user=self.user, data=attrs
-        )
+        self.set_password_form = self.set_password_form_class(user=self.user, data=attrs)
         if not self.set_password_form.is_valid():
             raise serializers.ValidationError(self.set_password_form.errors)
         if not default_token_generator.check_token(self.user, attrs['token']):
@@ -234,12 +237,8 @@ class PasswordChangeSerializer(serializers.Serializer):
     set_password_form_class = SetPasswordForm
 
     def __init__(self, *args, **kwargs):
-        self.old_password_field_enabled = getattr(
-            settings, 'OLD_PASSWORD_FIELD_ENABLED', False
-        )
-        self.logout_on_password_change = getattr(
-            settings, 'LOGOUT_ON_PASSWORD_CHANGE', False
-        )
+        self.old_password_field_enabled = getattr(settings, 'OLD_PASSWORD_FIELD_ENABLED', False)
+        self.logout_on_password_change = getattr(settings, 'LOGOUT_ON_PASSWORD_CHANGE', False)
         super(PasswordChangeSerializer, self).__init__(*args, **kwargs)
 
         if not self.old_password_field_enabled:
@@ -252,18 +251,16 @@ class PasswordChangeSerializer(serializers.Serializer):
         invalid_password_conditions = (
             self.old_password_field_enabled,
             self.user,
-            not self.user.check_password(value)
+            not self.user.check_password(value),
         )
 
         if all(invalid_password_conditions):
-            err_msg = _("Your old password was entered incorrectly. Please enter it again.")
+            err_msg = _('Your old password was entered incorrectly. Please enter it again.')
             raise serializers.ValidationError(err_msg)
         return value
 
     def validate(self, attrs):
-        self.set_password_form = self.set_password_form_class(
-            user=self.user, data=attrs
-        )
+        self.set_password_form = self.set_password_form_class(user=self.user, data=attrs)
 
         if not self.set_password_form.is_valid():
             raise serializers.ValidationError(self.set_password_form.errors)
@@ -273,4 +270,5 @@ class PasswordChangeSerializer(serializers.Serializer):
         self.set_password_form.save()
         if not self.logout_on_password_change:
             from django.contrib.auth import update_session_auth_hash
+
             update_session_auth_hash(self.request, self.user)
